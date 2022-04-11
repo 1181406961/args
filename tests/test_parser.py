@@ -1,5 +1,5 @@
 import pytest
-from args.exception import ParamError
+from args.exception import MultiParamError
 from args.parser import args_parser
 
 
@@ -17,9 +17,9 @@ def test_parser_l_set_flag_to_true():
     assert parser.l is True
 
 
-# TODO sad path ['-l' 'abc']
+# TODO -l sad path ['-l' 'abc']
 def test_parser_l_after_has_no_param():
-    with pytest.raises(ParamError) as e:
+    with pytest.raises(MultiParamError) as e:
         args_parser(['-l', '/user/log'])
     assert e.value.field == '-l'
 
@@ -36,6 +36,8 @@ def test_parser_p_set_port():
     assert parser.port == 8080
 
 
+# TODO -p sad path ['-p','8080','8090']
+
 #   TODO default 为0
 def test_parser_not_set_p_to_zero():
     parser = args_parser([])
@@ -47,6 +49,8 @@ def test_parser_set_d_to_directory():
     parser = args_parser(['-d', '/user/log'])
     assert parser.directory == '/user/log'
 
+
+# TODO -d sad path ['-d','/user/log','/user/tmp']
 
 #   TODO default 为""
 def test_parser_not_set_d_to_empty():
