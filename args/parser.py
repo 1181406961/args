@@ -1,49 +1,85 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, Callable, Any, Optional
 from functools import partial
 from args.exception import MultiParamError
 
 
-@dataclass
-class OptionParser(object):
-    params: List[str]
-    index: int
-    flag: str
+class Field(ABC):
+    def __init__(self, flag: str, default: Optional[Any], get: Callable):
+        self.flag = flag
+        self.default = default
+        self.get = get
 
-    def parse_value(self):
-        if self.index + 1 == len(self.params):
+    def __set_name__(self, owner, name):
+        self.public_name = name
+        self.private_name = f'_{name}'
+
+    def __get__(self, instance, owner):
+        if not hasattr(instance, self.private_name):
+            return self.default
+        return getattr(instance, self.private_name)
+
+    def __set__(self, instance, value):
+        setattr(instance, self.private_name, value)
+
+    def values(self, params):
+        i = 0
+        while i < len(params):
+            if params[i] == self.flag:
+                break
+            i += 1
+        if i + 1 == len(params):
             return []
-        end = self.index + 1
-        while end < len(self.params):
-            if self.params[end].startswith('-'):
+        end = i + 1
+        while end < len(params):
+            if params[end].startswith('-'):
                 break
             end += 1
-        return self.params[self.index + 1:end]
+        return params[i + 1:end]
 
-    def bool(self):
-        values = self.parse_value()
-        if len(values) != 0:
-            raise MultiParamError(flag=self.flag, value=True)
-        return True
+    @abstractmethod
+    def parser_attr(self, params):
+        '''
+        :param params:
+        :return:
+        '''
 
-    def single(self):
-        values = self.parse_value()
-        if len(values) != 1:
+
+class SingleField(Field):
+    def __init__(self, value_size: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.value_size = value_size
+
+    def parser_attr(self, params):
+        values = self.values(params)
+        if len(values) != self.value_size:
             raise MultiParamError(flag=self.flag, value=values)
-        return values[0]
+        return self.get(values)
 
 
-@dataclass
-class Parser:
-    l: bool = False
-    port: int = 0
-    directory: str = ''
+class Option:
+    l = SingleField(value_size=0, flag='-l', default=False, get=lambda values: True)
+    port = SingleField(value_size=1, flag='-p', default=0, get=lambda values: int(values[0]))
+    directory = SingleField(value_size=1, flag='-d', default='', get=lambda values: values[0])
 
-    PARAM_MAP = {
-        '-l': lambda params, index: {'l': OptionParser(params, index=index, flag='-l').bool()},
-        '-p': lambda params, index: {'port': int(OptionParser(params, index=index, flag='-p').single())},
-        '-d': lambda params, index: {'directory': OptionParser(params, index=index, flag='-d').single()},
-    }
+    def parser(self, flag, params):
+        flag_map_fields = self.flag_map_fields()
+        field = flag_map_fields.get(flag, None)
+        if field:
+            setattr(self, field.public_name, field.parser_attr(params))
+
+    @classmethod
+    def flag_map_fields(cls):
+        if hasattr(cls, '_flag_map_fields'):
+            return cls._flag_map_fields
+        flag_map_fields = {}
+        for key in cls.__dict__:
+            value = cls.__dict__[key]
+            if isinstance(value, Field):
+                flag_map_fields[value.flag] = value
+        cls._flag_map_fields = flag_map_fields
+        return cls._flag_map_fields
 
 
 def args_parser(params: List[str]):
@@ -53,14 +89,6 @@ def args_parser(params: List[str]):
     :return:
     '''
 
-    kwargs = {}
-    if not params:
-        return Parser()
-    list(map(partial(parser_flag_value, params=params, kwargs=kwargs), range(len(params))))
-    return Parser(**kwargs)
-
-
-def parser_flag_value(index, params, kwargs):
-    get_value = Parser.PARAM_MAP.get(params[index], None)
-    if get_value:
-        kwargs.update(get_value(params, index))
+    option = Option()
+    list(map(partial(option.parser, params=params), params))
+    return option
