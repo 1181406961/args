@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import List, Callable, Any, Optional
-from functools import partial
+from functools import partial, cached_property
 from args.exception import MultiParamError
 
 
@@ -64,22 +63,20 @@ class Option:
     directory = SingleField(value_size=1, flag='-d', default='', get=lambda values: values[0])
 
     def parser(self, flag, params):
-        flag_map_fields = self.flag_map_fields()
+        flag_map_fields = self.flag_map_fields
         field = flag_map_fields.get(flag, None)
         if field:
             setattr(self, field.public_name, field.parser_attr(params))
 
-    @classmethod
-    def flag_map_fields(cls):
-        if hasattr(cls, '_flag_map_fields'):
-            return cls._flag_map_fields
+    @cached_property
+    def flag_map_fields(self):
+        class_attrs = self.__class__.__dict__
         flag_map_fields = {}
-        for key in cls.__dict__:
-            value = cls.__dict__[key]
+        for key in class_attrs:
+            value = class_attrs[key]
             if isinstance(value, Field):
                 flag_map_fields[value.flag] = value
-        cls._flag_map_fields = flag_map_fields
-        return cls._flag_map_fields
+        return flag_map_fields
 
 
 def args_parser(params: List[str]):

@@ -23,5 +23,3 @@ Pipfile
 *.swo
 .idea
 nohup.out
-test*result.xml
-celerybeat-schedule*
