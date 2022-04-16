@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Callable, Any, Optional, Type, Dict, Union
+from typing import List, Callable, Any, Optional, Type, Dict
 from functools import partial, cached_property
 from args.exception import MultiParamError, ParamTypeError, ParamEnoughError
 
@@ -11,6 +11,13 @@ class OptionParser:
                  get_value: Callable = lambda values: values,
                  excepted_size: Optional[int] = None,
                  type: Callable = str):
+        '''
+        :param flag: 对应flag
+        :param default: flag默认值
+        :param get_value: 获取值func
+        :param excepted_size: 期望值大小
+        :param type:值类型
+        '''
         self.change_to = type
         self.excepted_size = excepted_size
         self.flag = flag
@@ -101,7 +108,7 @@ class ListOptions(Options):
     d = OptionParser(type=int, flag='-d', default=[])
 
 
-def args_parser(params: List[str], option_class: Type[Options]) -> Union[SingleOptions, ListOptions]:
+def args_parser(params: List[str], option_class: Type[Options]):
     '''
     传入参数进行解析
     :param option_class:
