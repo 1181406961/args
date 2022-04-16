@@ -16,19 +16,19 @@ class OptionParser:
         self.default = default
         self.get_flag_value = get_value
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: 'Parser', name: str):
         self.public_name = name
         self.private_name = f'_{name}'
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: 'Parser', owner: 'Parser'):
         if not hasattr(instance, self.private_name):
             return self.default
         return getattr(instance, self.private_name)
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: 'Parser', value: Any):
         setattr(instance, self.private_name, value)
 
-    def values(self, params):
+    def values(self, params: List[str]):
         i = 0
         while i < len(params):
             if params[i] == self.flag:
@@ -43,7 +43,7 @@ class OptionParser:
             end += 1
         return params[i + 1:end]
 
-    def parser_attr(self, params):
+    def parser_attr(self, params: List[str]):
         values = self.values(params)
         if self.excepted_size is None:
             return self.get_flag_value(self.change_values_type(values))
@@ -66,7 +66,7 @@ class OptionParser:
         return result
 
 
-def get_single_value(values):
+def get_single_value(values: List[Any]):
     return values[0]
 
 
@@ -76,7 +76,7 @@ class Parser:
     directory = OptionParser(excepted_size=1, flag='-d', default='', get_value=get_single_value)
     g = OptionParser(flag='-g', default=[], get_value=lambda values: values)
 
-    def parser(self, flag, params):
+    def parser(self, flag: str, params: List[str]):
         flag_map_fields = self.flag_map_fields
         field = flag_map_fields.get(flag, None)
         if field:
