@@ -1,14 +1,20 @@
-from abc import ABC, abstractmethod
 from typing import List, Callable, Any, Optional
 from functools import partial, cached_property
-from args.exception import MultiParamError
+from args.exception import MultiParamError, ParamTypeError
 
 
-class Field(ABC):
-    def __init__(self, flag: str, default: Optional[Any], get: Callable):
+class OptionParser:
+    def __init__(self, *,
+                 flag: str,
+                 default: Optional[Any],
+                 get_value: Callable,
+                 excepted_size: Optional[int] = None,
+                 type: Callable = str):
+        self.change_to = type
+        self.excepted_size = excepted_size
         self.flag = flag
         self.default = default
-        self.get = get
+        self.get_flag_value = get_value
 
     def __set_name__(self, owner, name):
         self.public_name = name
@@ -37,30 +43,34 @@ class Field(ABC):
             end += 1
         return params[i + 1:end]
 
-    @abstractmethod
-    def parser_attr(self, params):
-        '''
-        :param params:
-        :return:
-        '''
-
-
-class SingleField(Field):
-    def __init__(self, value_size: int, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.value_size = value_size
-
     def parser_attr(self, params):
         values = self.values(params)
-        if len(values) != self.value_size:
+        if self.excepted_size is not None and len(values) != self.excepted_size:
             raise MultiParamError(flag=self.flag, value=values)
-        return self.get(values)
+        return self.get_flag_value(self.change_values_type(values))
+
+    def change_values_type(self, values: List[str]):
+        error_type_values = []
+        result = []
+        for value in values:
+            try:
+                result.append(self.change_to(value))
+            except ValueError:
+                error_type_values.append(value)
+        if error_type_values:
+            raise ParamTypeError(flag=self.flag, value=error_type_values)
+        return result
 
 
-class Option:
-    l = SingleField(value_size=0, flag='-l', default=False, get=lambda values: True)
-    port = SingleField(value_size=1, flag='-p', default=0, get=lambda values: int(values[0]))
-    directory = SingleField(value_size=1, flag='-d', default='', get=lambda values: values[0])
+def get_single_value(values):
+    return values[0]
+
+
+class Parser:
+    l = OptionParser(type=bool, excepted_size=0, flag='-l', default=False, get_value=lambda values: True)
+    port = OptionParser(type=int, excepted_size=1, flag='-p', default=0, get_value=get_single_value)
+    directory = OptionParser(excepted_size=1, flag='-d', default='', get_value=get_single_value)
+    g = OptionParser(flag='-g', default=[], get_value=lambda values: values)
 
     def parser(self, flag, params):
         flag_map_fields = self.flag_map_fields
@@ -73,9 +83,9 @@ class Option:
         class_attrs = self.__class__.__dict__
         flag_map_fields = {}
         for key in class_attrs:
-            value = class_attrs[key]
-            if isinstance(value, Field):
-                flag_map_fields[value.flag] = value
+            field = class_attrs[key]
+            if isinstance(field, OptionParser):
+                flag_map_fields[field.flag] = field
         return flag_map_fields
 
 
@@ -86,6 +96,6 @@ def args_parser(params: List[str]):
     :return:
     '''
 
-    option = Option()
+    option = Parser()
     list(map(partial(option.parser, params=params), params))
     return option
