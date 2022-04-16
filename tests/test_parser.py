@@ -11,27 +11,27 @@ def test_parser():
     assert p.g == ['this', 'is', 'a', 'list']
 
 
-@pytest.mark.parametrize('flag,example,excepted_value', [
+@pytest.mark.parametrize('attr_name,example,excepted_value', [
     ('l', ['-l'], True),
     ('directory', ['-d', '/user/log'], '/user/log'),
     ('port', ['-p', '8080'], 8080),
     ('g', ['-g', 'this', 'is', 'a', 'list'], ['this', 'is', 'a', 'list'])
 ])
-def test_option_parser_set_flag_to_correct_value(flag, example, excepted_value):
+def test_option_parser_set_flag_to_correct_value(attr_name, example, excepted_value):
     p = parser.args_parser(example)
-    value = getattr(p, flag)
+    value = getattr(p, attr_name)
     assert value == excepted_value
 
 
-@pytest.mark.parametrize('flag,excepted_default', [
+@pytest.mark.parametrize('attr_name,excepted_default', [
     ('l', False),
     ('directory', ''),
     ('port', 0),
     ('g', [])
 ])
-def test_option_parser_not_set_flag_to_default_value(flag, excepted_default):
+def test_option_parser_not_set_flag_to_default_value(attr_name, excepted_default):
     p = parser.args_parser([])
-    value = getattr(p, flag)
+    value = getattr(p, attr_name)
     assert value == excepted_default
 
 
