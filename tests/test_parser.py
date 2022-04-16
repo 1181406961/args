@@ -4,8 +4,9 @@ from args import parser
 from args.parser import ListOptions, SingleOptions
 
 
-def test_parser():
-    options = parser.args_parser(['-l', '-p', '8080', '-d', '/usr/logs'], SingleOptions)
+def test_single_option_parser():
+    options = parser.args_parser(
+        ['-l', '-p', '8080', '-d', '/usr/logs'], SingleOptions)
     assert options.l is True
     assert options.port == 8080
     assert options.directory == '/usr/logs'
@@ -16,7 +17,8 @@ def test_parser():
     ('directory', ['-d', '/user/log'], '/user/log'),
     ('port', ['-p', '8080'], 8080),
 ])
-def test_single_option_parser_set_flag_to_correct_value(attr_name, example, excepted_value):
+def test_single_option_parser_set_flag_to_correct_value(
+        attr_name, example, excepted_value):
     options = parser.args_parser(example, SingleOptions)
     value = getattr(options, attr_name)
     assert value == excepted_value
@@ -27,7 +29,8 @@ def test_single_option_parser_set_flag_to_correct_value(attr_name, example, exce
     ('directory', ''),
     ('port', 0),
 ])
-def test_single_option_parser_not_set_flag_to_default_value(attr_name, excepted_default):
+def test_single_option_parser_not_set_flag_to_default_value(
+        attr_name, excepted_default):
     options = parser.args_parser([], SingleOptions)
     value = getattr(options, attr_name)
     assert value == excepted_default
@@ -38,7 +41,8 @@ def test_single_option_parser_not_set_flag_to_default_value(attr_name, excepted_
     ('-d', ['/user/log', '/tmp/log']),
     ('-p', ['8080', '8090']),
 ])
-def test_single_option_parser_set_flag_to_multi_value_raise_error(flag, error_values):
+def test_single_option_parser_set_flag_to_multi_value_raise_error(
+        flag, error_values):
     error_example = [flag] + error_values
     with pytest.raises(MultiParamError) as e:
         parser.args_parser(error_example, SingleOptions)
@@ -47,8 +51,8 @@ def test_single_option_parser_set_flag_to_multi_value_raise_error(flag, error_va
 
 
 @pytest.mark.parametrize('flag,error_example,error_values', [
-    ('-d', ['-l', '-d'], []),
-    ('-p', ['-l', '-p'], []),
+    ('-d', ['-d', '-l'], []),
+    ('-p', ['-p', '-l'], []),
 ])
 def test_single_option_parser_not_set_flag_enough_value_raise_error(
         flag, error_example, error_values):
@@ -58,8 +62,7 @@ def test_single_option_parser_not_set_flag_enough_value_raise_error(
         assert e.value.value == []
 
 
-# TODO -p sad path ['-p','a']
-def test_parser_set_p_to_str_raise_error():
+def test_parser_set_p_to_incorrect_value_raise_error():
     with pytest.raises(ParamTypeError) as e:
         parser.args_parser(['-p', 'a'], SingleOptions)
     assert e.value.flag == '-p'
@@ -70,7 +73,8 @@ def test_parser_set_p_to_str_raise_error():
     ('g', ['-g', 'this', 'is', 'a', 'list'], ['this', 'is', 'a', 'list']),
     ('d', ['-d', '1', '2', '-3', '4'], [1, 2, -3, 4]),
 ])
-def test_list_option_parser_set_flag_to_correct_value(attr_name, example, excepted_value):
+def test_list_option_parser_set_flag_to_correct_value_raise_error(
+        attr_name, example, excepted_value):
     options = parser.args_parser(example, ListOptions)
     value = getattr(options, attr_name)
     assert value == excepted_value
@@ -80,7 +84,8 @@ def test_list_option_parser_set_flag_to_correct_value(attr_name, example, except
     ('g', []),
     ('d', []),
 ])
-def test_list_option_parser_not_set_flag_to_default_value(attr_name, excepted_default):
+def test_list_option_parser_not_set_flag_to_default_value(
+        attr_name, excepted_default):
     options = parser.args_parser([], ListOptions)
     value = getattr(options, attr_name)
     assert value == excepted_default
