@@ -5,8 +5,18 @@ class ParamError(ValueError):
 
 
 class MultiParamError(ParamError):
-    pass
+    '''
+    参数过多
+    '''
 
 
 class ParamTypeError(ParamError):
-    pass
+    '''
+    参数类型错误
+    '''
+
+
+class ParamEnoughError(ParamError):
+    '''
+    参数不够
+    '''

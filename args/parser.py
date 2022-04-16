@@ -1,6 +1,6 @@
 from typing import List, Callable, Any, Optional
 from functools import partial, cached_property
-from args.exception import MultiParamError, ParamTypeError
+from args.exception import MultiParamError, ParamTypeError, ParamEnoughError
 
 
 class OptionParser:
@@ -45,8 +45,12 @@ class OptionParser:
 
     def parser_attr(self, params):
         values = self.values(params)
-        if self.excepted_size is not None and len(values) != self.excepted_size:
+        if self.excepted_size is None:
+            return self.get_flag_value(self.change_values_type(values))
+        if len(values) > self.excepted_size:
             raise MultiParamError(flag=self.flag, value=values)
+        elif len(values) < self.excepted_size:
+            raise ParamEnoughError(flag=self.flag, value=values)
         return self.get_flag_value(self.change_values_type(values))
 
     def change_values_type(self, values: List[str]):
