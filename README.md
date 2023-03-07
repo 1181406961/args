@@ -1,5 +1,5 @@
-<p>Python实现clean code中的Command-Line Argument Parser练习。<p>
-<p>需要python3.8及以上版本<p>
+<p>Python实现clean code中的Command-Line Argument Parser练习。(需要python3.8及以上版本)<p>
+<p>自己实现命令行参数解析，简单来说就是解析一个字符串数组。<p>
 <p>例如:  -l -p 8080 -d /usr/logs　</p>
 <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp“l”（日志）没有相关的值，它是一个布尔标志，如果存在则为 true，不存在则为 false。</p>
 <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp“p”（端口）有一个整数值，“d”（目录）有一个字符串值。</p>
